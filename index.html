@@ -161,23 +161,25 @@
       const shape = els.shape.value;
       const logoScale = clamp(int(els.logoSize.value, 22), 10, 40) / 100;
 
-      const options = {
-        width: size,
-        height: size,
-        data,
-        margin,
-        qrOptions: { errorCorrectionLevel: ecLevel },
-        backgroundOptions: { color: bg },
-        dotsOptions: { type: shape, color: fg },
-        cornersSquareOptions: { type: "extra-rounded", color: fg },
-        cornersDotOptions: { type: "dot", color: fg },
-        image: logoDataUrl || undefined,
-        imageOptions: {
-          crossOrigin: 'anonymous',
-          margin: 2,
-          imageSize: size * logoScale, // utile pour le rendu raster
-        }
-      };
+const options = {
+  width: 512,                       // augmente la taille globale
+  height: 512,
+  data,                             // ton URL
+  margin: 12,                       // grande quiet zone
+  qrOptions: { errorCorrectionLevel: "H", mode: "Byte" },
+  backgroundOptions: { color: "#FFFFFF" },
+  dotsOptions: { type: "square", color: "#111111" }, // pas de fantaisie
+  cornersSquareOptions: { type: "square", color: "#111111" }, // coins carrés
+  cornersDotOptions: { type: "none" },               // rien au milieu
+  image: logoDataUrl || undefined,
+  imageOptions: {
+    crossOrigin: "anonymous",
+    hideBackgroundDots: true,       // creuse un “trou” sous le logo
+    margin: 6,                      // coussin blanc autour du logo (important)
+    imageSize: 0.18 * 512           // ≈ 18% de la largeur
+  }
+};
+
 
       if (!qr) {
         qr = new QRCodeStyling(options);

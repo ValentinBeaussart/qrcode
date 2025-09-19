@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Générateur de QR Code</title>
+  <style>
+    :root { --accent:#04815D; }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; }
+    body { margin: 0; background: #f7f7f8; color:#111; }
+    .wrap { max-width: 980px; margin: 40px auto; padding: 0 16px; }
+    .card { background:#fff; border:1px solid #e6e6e9; border-radius:16px; padding:20px; box-shadow: 0 4px 18px rgba(0,0,0,.04); }
+    .grid { display:grid; gap:16px; grid-template-columns: 1fr; }
+    @media (min-width: 960px){ .grid { grid-template-columns: 1.2fr .8fr; } }
+    .row { display:flex; gap:12px; align-items:center; }
+    .row > label { width: 160px; color:#444; font-size:14px; }
+    input[type="text"], input[type="number"], select {
+      flex:1; padding:10px 12px; border:1px solid #ddd; border-radius:10px; font-size:14px;
+    }
+    input[type="color"] { width: 48px; height: 36px; border:1px solid #ddd; border-radius:8px; padding:0; }
+    input[type="file"] { font-size: 13px; }
+    .btn {
+      appearance: none; border:0; padding:10px 14px; border-radius:12px; font-weight:600; cursor:pointer;
+      background: var(--accent); color:#fff;
+    }
+    .btn.secondary { background:#111; }
+    .btn.ghost { background:#fff; color:#111; border:1px solid #ddd; }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+    .qr-card { display:flex; align-items:center; justify-content:center; background:#fff; border:1px dashed #dcdce0; border-radius:16px; min-height: 360px; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .hint { font-size:12px; color:#666; }
+    h1 { font-size: clamp(22px, 2vw, 28px); margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 24px 0 8px; color:#333; }
+    footer { margin-top: 20px; font-size: 12px; color:#666; text-align:center; }
+    .pill { font-size:12px; padding:4px 8px; border-radius:999px; background:#eef7f2; color:#0a6b48; display:inline-block; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Générateur de QR Code <span class="pill">gratuit & local</span></h1>
+
+    <div class="grid">
+      <!-- Panneau paramètres -->
+      <div class="card">
+        <h2>Contenu</h2>
+        <div class="row">
+          <label for="text">Texte / URL</label>
+          <input id="text" type="text" placeholder="https://exemple.com"
+                 value="https://pixeldurable.fr" />
+        </div>
+
+        <h2>Apparence</h2>
+        <div class="row">
+          <label for="size">Taille (px)</label>
+          <input id="size" type="number" min="128" max="1024" step="16" value="320" />
+        </div>
+        <div class="row">
+          <label for="margin">Marge</label>
+          <input id="margin" type="number" min="0" max="32" step="1" value="8" />
+        </div>
+        <div class="row">
+          <label for="ecLevel">Correction d’erreur</label>
+          <select id="ecLevel">
+            <option value="L">L (léger)</option>
+            <option value="M" selected>M (moyen)</option>
+            <option value="Q">Q (élevé)</option>
+            <option value="H">H (max)</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>Couleur</label>
+          <input id="fg" type="color" value="#111111" title="Couleur des pixels" />
+          <span class="hint">pixels</span>
+          <input id="bg" type="color" value="#FFFFFF" title="Couleur de fond" />
+          <span class="hint">fond</span>
+        </div>
+        <div class="row">
+          <label for="shape">Style des points</label>
+          <select id="shape">
+            <option value="square" selected>Carré</option>
+            <option value="dots">Rond</option>
+            <option value="extra-rounded">Très arrondi</option>
+            <option value="classy">Classy</option>
+            <option value="classy-rounded">Classy arrondi</option>
+          </select>
+        </div>
+
+        <h2>Logo (optionnel)</h2>
+        <div class="row">
+          <label for="logo">Image</label>
+          <input id="logo" type="file" accept="image/*" />
+        </div>
+        <div class="row">
+          <label for="logoSize">Taille logo (%)</label>
+          <input id="logoSize" type="number" min="10" max="40" step="1" value="22" />
+        </div>
+
+        <div class="row" style="margin-top: 8px;">
+          <button class="btn" id="btn-generate">Générer / Mettre à jour</button>
+          <button class="btn ghost" id="btn-clear-logo">Retirer le logo</button>
+        </div>
+
+        <h2>Export</h2>
+        <div class="actions">
+          <button class="btn secondary" id="btn-png">Télécharger PNG</button>
+          <button class="btn secondary" id="btn-svg">Télécharger SVG</button>
+        </div>
+
+        <p class="hint" style="margin-top:8px">
+          Astuce : pour l’impression, préférez le format <b>SVG</b> (vectoriel) pour une netteté parfaite.
+        </p>
+      </div>
+
+      <!-- Aperçu QR -->
+      <div class="qr-card card" id="qr-container">
+        <!-- Le QR sera injecté ici -->
+      </div>
+    </div>
+
+    <footer>
+      Fonctionne entièrement dans votre navigateur. Aucune donnée n’est envoyée sur un serveur.
+    </footer>
+  </div>
+
+  <!-- Lib QR côté client -->
+  <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.6.0/lib/qr-code-styling.js"></script>
+  <script>
+    // --- Sélecteurs UI ---
+    const els = {
+      text: document.getElementById('text'),
+      size: document.getElementById('size'),
+      margin: document.getElementById('margin'),
+      ecLevel: document.getElementById('ecLevel'),
+      fg: document.getElementById('fg'),
+      bg: document.getElementById('bg'),
+      shape: document.getElementById('shape'),
+      logo: document.getElementById('logo'),
+      logoSize: document.getElementById('logoSize'),
+      container: document.getElementById('qr-container'),
+      btnGenerate: document.getElementById('btn-generate'),
+      btnPng: document.getElementById('btn-png'),
+      btnSvg: document.getElementById('btn-svg'),
+      btnClearLogo: document.getElementById('btn-clear-logo'),
+    };
+
+    // --- QR instance ---
+    let qr = null;
+    let logoDataUrl = null;
+
+    function createOrUpdateQR() {
+      const data = (els.text.value || '').trim();
+      if (!data.length) {
+        alert('Entrez un texte ou une URL.');
+        return;
+      }
+      const size = clamp(int(els.size.value, 320), 128, 1024);
+      const margin = clamp(int(els.margin.value, 8), 0, 32);
+      const ecLevel = els.ecLevel.value; // L/M/Q/H
+      const fg = els.fg.value;
+      const bg = els.bg.value;
+      const shape = els.shape.value;
+      const logoScale = clamp(int(els.logoSize.value, 22), 10, 40) / 100;
+
+      const options = {
+        width: size,
+        height: size,
+        data,
+        margin,
+        qrOptions: { errorCorrectionLevel: ecLevel },
+        backgroundOptions: { color: bg },
+        dotsOptions: { type: shape, color: fg },
+        cornersSquareOptions: { type: "extra-rounded", color: fg },
+        cornersDotOptions: { type: "dot", color: fg },
+        image: logoDataUrl || undefined,
+        imageOptions: {
+          crossOrigin: 'anonymous',
+          margin: 2,
+          imageSize: size * logoScale, // utile pour le rendu raster
+        }
+      };
+
+      if (!qr) {
+        qr = new QRCodeStyling(options);
+        els.container.innerHTML = '';
+        qr.append(els.container);
+      } else {
+        qr.update(options);
+      }
+    }
+
+    // Helpers
+    const int = (v, d=0) => (Number.isFinite(+v) ? +v : d);
+    const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+
+    // Logo upload → DataURL
+    els.logo.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const okTypes = ['image/png','image/jpeg','image/webp','image/svg+xml'];
+      if (!okTypes.includes(file.type)) {
+        alert("Format d'image non supporté (PNG, JPG, WEBP, SVG).");
+        e.target.value = '';
+        return;
+      }
+      const dataUrl = await fileToDataURL(file);
+      logoDataUrl = dataUrl;
+      createOrUpdateQR();
+    });
+
+    els.btnClearLogo.addEventListener('click', () => {
+      logoDataUrl = null;
+      els.logo.value = '';
+      createOrUpdateQR();
+    });
+
+    function fileToDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Génère / met à jour
+    els.btnGenerate.addEventListener('click', createOrUpdateQR);
+
+    // Exports
+    els.btnPng.addEventListener('click', () => {
+      if (!qr) createOrUpdateQR();
+      qr.download({ name: 'qrcode', extension: 'png' });
+    });
+
+    els.btnSvg.addEventListener('click', () => {
+      if (!qr) createOrUpdateQR();
+      qr.download({ name: 'qrcode', extension: 'svg' });
+    });
+
+    // Génération initiale
+    createOrUpdateQR();
+  </script>
+</body>
+</html>

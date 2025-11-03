@@ -147,39 +147,43 @@
     let qr = null;
     let logoDataUrl = null;
 
+    // Helpers
+    const int = (v, d=0) => (Number.isFinite(+v) ? +v : d);
+    const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+
     function createOrUpdateQR() {
       const data = (els.text.value || '').trim();
       if (!data.length) {
         alert('Entrez un texte ou une URL.');
         return;
       }
+
       const size = clamp(int(els.size.value, 320), 128, 1024);
       const margin = clamp(int(els.margin.value, 8), 0, 32);
-      const ecLevel = els.ecLevel.value; // L/M/Q/H
+      const ecLevel = els.ecLevel.value;
       const fg = els.fg.value;
       const bg = els.bg.value;
       const shape = els.shape.value;
       const logoScale = clamp(int(els.logoSize.value, 22), 10, 40) / 100;
 
-const options = {
-  width: 512,                       // augmente la taille globale
-  height: 512,
-  data,                             // ton URL
-  margin: 12,                       // grande quiet zone
-  qrOptions: { errorCorrectionLevel: "H", mode: "Byte" },
-  backgroundOptions: { color: "#FFFFFF" },
-  dotsOptions: { type: "square", color: "#111111" }, // pas de fantaisie
-  cornersSquareOptions: { type: "square", color: "#111111" }, // coins carrés
-  cornersDotOptions: { type: "none" },               // rien au milieu
-  image: logoDataUrl || undefined,
-  imageOptions: {
-    crossOrigin: "anonymous",
-    hideBackgroundDots: true,       // creuse un “trou” sous le logo
-    margin: 6,                      // coussin blanc autour du logo (important)
-    imageSize: 0.18 * 512           // ≈ 18% de la largeur
-  }
-};
-
+      const options = {
+        width: size,
+        height: size,
+        data,
+        margin,
+        qrOptions: { errorCorrectionLevel: ecLevel, mode: "Byte" },
+        backgroundOptions: { color: bg },
+        dotsOptions: { type: shape, color: fg },
+        cornersSquareOptions: { type: "square", color: fg },
+        cornersDotOptions: { type: "none" },
+        image: logoDataUrl || undefined,
+        imageOptions: {
+          crossOrigin: "anonymous",
+          hideBackgroundDots: true,
+          margin: 6,
+          imageSize: logoScale * size
+        }
+      };
 
       if (!qr) {
         qr = new QRCodeStyling(options);
@@ -189,10 +193,6 @@ const options = {
         qr.update(options);
       }
     }
-
-    // Helpers
-    const int = (v, d=0) => (Number.isFinite(+v) ? +v : d);
-    const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
 
     // Logo upload → DataURL
     els.logo.addEventListener('change', async (e) => {

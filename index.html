@@ -177,12 +177,12 @@
         cornersSquareOptions: { type: "square", color: fg },
         cornersDotOptions: { type: "none" },
         image: logoDataUrl || undefined,
-        imageOptions: {
-          crossOrigin: "anonymous",
-          hideBackgroundDots: true,
-          margin: 6,
-          imageSize: logoScale * size
-        }
+imageOptions: {
+  crossOrigin: "anonymous",
+  hideBackgroundDots: true,
+  margin: 6,
+  scale: logoScale * 2.5 // multiplicateur interne (~1.0 par défaut)
+}
       };
 
       if (!qr) {
